@@ -21,14 +21,10 @@ app.use(cors());
 app.use(express.json());
 app.use('/db', dbRoutes);
 
-// Create a test route to check the database connection
-app.get('/', (req, res) => {
-  db.query('SELECT 1 + 1 AS solution', (err, results) => {
-    if (err) {
-      return res.status(500).send('Database connection failed: ' + err.message);
-    }
-    res.send('Database connected! Solution: ' + results[0].solution);
-  });
+// Add static file serving and catch-all route BEFORE database connection check
+app.use(express.static(path.join(__dirname,'build')));
+app.get('*', (req, res) => {
+  res.sendFile('index.html', { root: path.join(__dirname, 'build') });
 });
 
 // Start the server
@@ -36,18 +32,14 @@ app.listen(port, () => {
   console.log(`Server is running at http://localhost:${port}`);
 });
 
+// Database connection check
 db.getConnection((err, connection) => {
     if (err) {
       console.error('Error connecting to the database:', err.message);
       return;
     }
     console.log('Database connected successfully!');
-    connection.release(); // Release the connection back to the pool
-  });
-
-  app.use(express.static(path.join(__dirname,'build')))
-app.get('*', (req, res) => {
-  res.sendFile('index.html', { root: path.join(__dirname, 'build') });
+    connection.release();
 });
 
   
